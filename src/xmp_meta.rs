@@ -1030,6 +1030,36 @@ impl XmpMeta {
         }
     }
 
+    /// <Narrative Fork> Adds an empty item to an array, creating the array if necessary.
+    pub fn append_empty_array_item(
+        &mut self,
+        namespace: &str,
+        array_name: &XmpValue<String>,
+        item_value: &XmpValue<()>,
+    ) -> XmpResult<()> {
+        if let Some(m) = self.m {
+            let c_ns = CString::new(namespace)?;
+            let c_array_name = CString::new(array_name.value.as_bytes())?;
+            let mut err = ffi::CXmpError::default();
+
+            unsafe {
+                ffi::CXmpMetaAppendArrayItem(
+                    m,
+                    &mut err,
+                    c_ns.as_ptr(),
+                    c_array_name.as_ptr(),
+                    array_name.options,
+                    std::ptr::null(),
+                    item_value.options,
+                );
+            }
+
+            XmpError::raise_from_c(&err)
+        } else {
+            Err(no_cpp_toolkit())
+        }
+    }
+
     /// Deletes an XMP subtree rooted at a given array item.
     ///
     /// It is not an error if the array item does not exist. Use
